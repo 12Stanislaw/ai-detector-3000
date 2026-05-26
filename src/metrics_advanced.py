@@ -1,16 +1,20 @@
 import nltk
 from nltk.tokenize import word_tokenize
 
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
+# --- АВТОМАТИЧНЕ ЗАВАНТАЖЕННЯ РЕСУРСІВ ДЛЯ НОВИХ ВЕРСІЙ NLTK ---
+required_nltk_resources = {
+    'tokenizers/punkt': 'punkt',
+    'tokenizers/punkt_tab': 'punkt_tab',  # <-- Ось цей хлопець вилітав!
+    'taggers/averaged_perceptron_tagger': 'averaged_perceptron_tagger',
+    'taggers/averaged_perceptron_tagger_eng': 'averaged_perceptron_tagger_eng' # Теж потрібно для нових версій
+}
 
-try:
-    nltk.data.find('taggers/averaged_perceptron_tagger')
-except LookupError:
-    nltk.download('averaged_perceptron_tagger')
-
+for path, package in required_nltk_resources.items():
+    try:
+        nltk.data.find(path)
+    except LookupError:
+        print(f"📥 NLTK resource not found. Downloading package: {package}...")
+        nltk.download(package)
 
 #---TTR_score =  (number of unique words) / (total number of words)---
 def calculate_ttr(text):

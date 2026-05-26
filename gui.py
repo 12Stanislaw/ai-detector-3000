@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import scrolledtext
 from src.classifier import run_full_model_test, train_detector, predict_ai_probability
+from src.metrics_advanced import calculate_ttr, calculate_adjective_density
 
 def analyze_text_action():
     """
@@ -17,6 +18,10 @@ def analyze_text_action():
     # Викликаємо нашу модель і отримуємо реальний відсоток ШІ
     ai_percentage = predict_ai_probability(user_text)
     
+    #Find ttr_score and adj_density from metrics advanced
+    ttr_score = calculate_ttr(user_text)
+    adj_density = calculate_adjective_density(user_text)
+
     # Твоя логіка світлофора, яку ти написав!
     if 65 < ai_percentage <= 100: 
         color = "#ff5555"      # Червоний
@@ -33,12 +38,18 @@ def analyze_text_action():
         text=f"{verdict} ({ai_percentage}%)", 
         foreground=color
     )
-    
-    # Тимчасовий напис для додаткових метрик, які ви допишете згодом
-    metrics_label.config(
-        text="Метрики тексту:\n• Статистичний аналіз слів успішно проведено за допомогою TF-IDF."
-    )
 
+    # Динамічно виводимо твої метрики у текстове поле картки результатів
+    metrics_label.config(
+        text=(
+            f"📊 Text Style Metrics (Advanced Mode):\n"
+            f"• Lexical Richness (TTR): {ttr_score:.4f}\n"
+            f"• Adjective Density (POS): {adj_density * 100:.2f}%\n\n"
+            f"💡 Info:\n"
+            f"  - Lower TTR usually indicates repetitive AI patterns.\n"
+            f"  - Human essays often have higher adjective density."
+        )
+    )
 #--- ДИЗАЙН ВІКНА ---
 root = tk.Tk()
 root.title("AI-detector 3000")
