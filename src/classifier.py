@@ -3,6 +3,7 @@ import re
 import numpy as np
 import pandas as pd
 from scipy.sparse import hstack, csr_matrix
+from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
@@ -50,7 +51,7 @@ def extract_hybrid_features(text):
 def train_detector(dataset_path="dataset.csv"):
     global _model, _vectorizer, _scaler
 
-    print("⏳ Навчання фінальної гібридної моделі...")
+    print("⏳ Training the model...")
     df = pd.read_csv(dataset_path)
     
     # Використовуємо символьні тріграми (текстура)
@@ -72,7 +73,7 @@ def train_detector(dataset_path="dataset.csv"):
     # Це робить модель менш впевненою, що нам і потрібно
     _model = LogisticRegression(C=0.1, class_weight='balanced', random_state=42)
     _model.fit(X_combined, df['generated'])
-    print("✅ Модель готова!")
+    print("✅ The model is ready!")
 
 def predict_ai_probability(raw_text):
     global _model, _vectorizer, _scaler
@@ -124,4 +125,44 @@ def predict_ai_probability(raw_text):
     return round(prob, 2)
 
 def run_full_model_test(dataset_path="dataset.csv"):
-    train_detector(dataset_path)
+    """
+    Проводить повний тест моделі на відкладених даних та виводить матрицю помилок.
+    """
+    global _model, _vectorizer, _scaler
+    if _model is None:
+        train_detector(dataset_path)
+
+    print("🧪 Starting validation on the test sample...")
+    df = pd.read_csv(dataset_path)
+    
+    # Розділяємо для чистого тесту
+    _, df_test = train_test_split(df, test_size=0.2, random_state=42, stratify=df['generated'])
+    
+    X_char = _vectorizer.transform(df_test['text'].apply(lambda x: x.lower()))
+    X_ling = np.array([extract_hybrid_features(t) for t in df_test['text']])
+    X_ling_scaled = _scaler.transform(X_ling)
+    X_combined = hstack([X_char, csr_matrix(X_ling_scaled)])
+    
+    from sklearn.metrics import confusion_matrix, classification_report
+    predictions = _model.predict(X_combined)
+    report = classification_report(df_test['generated'], predictions, target_names=['Human', 'AI'])
+    matrix = confusion_matrix(df_test['generated'], predictions)
+    
+    print("\n" + "═"*65)
+    print("📊 SYSTEM MODEL EVALUATION REPORT (STABLE HYBRID)")
+    print("═"*65)
+    print(report)
+    print("-" * 65)
+    print("🧱 CONFUSION MATRIX:")
+    print(f"   -------------------------------------------------------------")
+    print(f"   |  Actual Class  |  Predicted HUMAN (0) |   Predicted AI (1) |")
+    print(f"   -------------------------------------------------------------")
+    print(f"   |  HUMAN (0)     |  {matrix[0][0]:<19} (TN) |  {matrix[0][1]:<18} (FP) |")
+    print(f"   |  AI Generated  |  {matrix[1][0]:<19} (FN) |  {matrix[1][1]:<18} (TP) |")
+    print(f"   -------------------------------------------------------------")
+    print("\n📝 MATRIX LEGEND:")
+    print(" • TN (True Negative): Human text correctly identified as Human.")
+    print(" • TP (True Positive): AI text correctly identified as AI.")
+    print(" • FP (False Positive): Human text wrongly flagged as AI (False Alarm).")
+    print(" • FN (False Negative): AI text wrongly identified as Human (Missed AI).")
+    print("═"*65 + "\n")
