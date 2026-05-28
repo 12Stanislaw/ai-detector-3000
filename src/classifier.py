@@ -51,6 +51,7 @@ def extract_hybrid_features(text):
 def train_detector(dataset_path="dataset.csv"):
     global _model, _vectorizer, _scaler
 
+    print("Hello world!")
     print("⏳ Training the model...")
     df = pd.read_csv(dataset_path)
     
