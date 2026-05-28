@@ -2,7 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import scrolledtext
 from src.classifier import run_full_model_test, train_detector, predict_ai_probability
-from src.metrics_advanced import calculate_ttr, calculate_adjective_density
+from src.metrics_advanced import calculate_ttr, calculate_adjective_density, calculate_stopword_density
+from src.metrics_basic import calculate_sentence_start_diversity
 
 def analyze_text_action():
     """
@@ -18,9 +19,11 @@ def analyze_text_action():
     # Викликаємо нашу модель і отримуємо реальний відсоток ШІ
     ai_percentage = predict_ai_probability(user_text)
     
-    #Find ttr_score and adj_density from metrics advanced
+    # Отримуємо розширені метрики
     ttr_score = calculate_ttr(user_text)
     adj_density = calculate_adjective_density(user_text)
+    stop_density = calculate_stopword_density(user_text)
+    sent_div = calculate_sentence_start_diversity(user_text)
 
     # Твоя логіка світлофора, яку ти написав!
     if 65 < ai_percentage <= 100: 
@@ -44,12 +47,15 @@ def analyze_text_action():
         text=(
             f"📊 Text Style Metrics (Advanced Mode):\n"
             f"• Lexical Richness (TTR): {ttr_score:.4f}\n"
-            f"• Adjective Density (POS): {adj_density * 100:.2f}%\n\n"
+            f"• Adjective Density (POS): {adj_density * 100:.2f}%\n"
+            f"• Stopword Density: {stop_density:.4f}\n"
+            f"• Sentence Start Diversity: {sent_div:.2f}\n\n"
             f"💡 Info:\n"
-            f"  - Lower TTR usually indicates repetitive AI patterns.\n"
-            f"  - Human essays often have higher adjective density."
+            f"  - Lower TTR/Diversity usually indicates AI patterns.\n"
+            f"  - High Stopword Density (0.4+) is common for LLMs."
         )
     )
+
 #--- ДИЗАЙН ВІКНА ---
 root = tk.Tk()
 root.title("AI-detector 3000")

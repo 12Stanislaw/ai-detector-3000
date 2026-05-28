@@ -60,3 +60,33 @@ def calculate_adjective_density(text):
     density = adj_count / len(words)
     
     return round(density, 4)
+
+def calculate_capital_ratio(text: str) -> float:
+    """
+    Відношення великих літер до загальної кількості літер.
+    """
+    letters = [char for char in text if char.isalpha()]
+    if not letters:
+        return 0.0
+    capitals = sum(1 for char in letters if char.isupper())
+    return round(capitals / len(letters), 4)
+
+def calculate_stopword_density(text: str) -> float:
+    """
+    Щільність стоп-слів. ШІ часто використовує їх дуже правильно і часто.
+    """
+    from nltk.corpus import stopwords
+    try:
+        stop_words = set(stopwords.words('english'))
+    except LookupError:
+        nltk.download('stopwords', quiet=True)
+        stop_words = set(stopwords.words('english'))
+        
+    tokens = word_tokenize(text.lower())
+    words = [w for w in tokens if w.isalpha()]
+    if not words:
+        return 0.0
+    
+    stop_count = sum(1 for w in words if w in stop_words)
+    return round(stop_count / len(words), 4)
+

@@ -10,8 +10,20 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 
 # Імпортуємо ваші лінгвістичні метрики
-from src.metrics_basic import calculate_avg_sentence_length, calculate_sentence_length_variance
-from src.metrics_advanced import calculate_ttr, calculate_adjective_density
+from src.metrics_basic import (
+    calculate_avg_sentence_length, 
+    calculate_sentence_length_variance,
+    calculate_avg_word_length,
+    calculate_punctuation_density,
+    calculate_sentence_start_diversity,
+    calculate_comma_density
+)
+from src.metrics_advanced import (
+    calculate_ttr, 
+    calculate_adjective_density,
+    calculate_capital_ratio,
+    calculate_stopword_density
+)
 
 _model = None
 _vectorizer = None
@@ -21,83 +33,105 @@ def clean_text_basic(text):
     if not isinstance(text, str):
         return ""
     text = text.lower()
-    text = re.sub(r'[^a-zA-Z\s]', '', text)  # Тільки англійські літери
+    # Очищуємо від сміття, але тримаємо цифри та базову пунктуацію
+    text = re.sub(r'[^a-z0-9\s.,!?]', '', text) 
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
 def extract_linguistic_features(texts_series):
     """
-    Приймає колонку з текстами та повертає звичайний матричний масив 
-    із 4 лінгвістичних ознак (метрики Стаса та Богдана).
+    Приймає колонку з текстами та повертає матричний масив розширених ознак.
     """
     features_list = []
     for text in texts_series:
         if not isinstance(text, str):
             text = ""
-        avg_sent_len = calculate_avg_sentence_length(text)
-        sent_len_var = calculate_sentence_length_variance(text)
-        ttr = calculate_ttr(text)
-        adj_density = calculate_adjective_density(text)
         
-        features_list.append([avg_sent_len, sent_len_var, ttr, adj_density])
+        features = [
+            calculate_avg_sentence_length(text),
+            calculate_sentence_length_variance(text),
+            calculate_avg_word_length(text),
+            calculate_punctuation_density(text),
+            calculate_sentence_start_diversity(text),
+            calculate_comma_density(text),
+            calculate_ttr(text),
+            calculate_adjective_density(text),
+            calculate_capital_ratio(text),
+            calculate_stopword_density(text)
+        ]
+        features_list.append(features)
     return np.array(features_list)
 
 def train_detector(dataset_path="dataset.csv"):
     global _model, _vectorizer, _scaler
     
-    if not os.path.exists(dataset_path):
-        raise FileNotFoundError(f"❌ Dataset path {dataset_path} not found!")
-
-    print("⏳ Завантаження датасету для комбінованого навчання...")
-    df = pd.read_csv(dataset_path, encoding='utf-8')
+    print("⏳ Завантаження основного датасету...")
+    df_orig = pd.read_csv(dataset_path, encoding='utf-8')
     
-    text_col = 'text' if 'text' in df.columns else df.columns[0]
-    df['cleaned_text'] = df[text_col].apply(clean_text_basic)
+    # Спочатку розділимо оригінал на train/test, щоб мати чистий тест
+    df_train_orig, df_test_orig = train_test_split(df_orig, test_size=0.2, random_state=42, stratify=df_orig['generated'])
     
-    X_raw = df['cleaned_text']
-    X_orig = df[text_col]  # Для лінгвістики потрібен оригінал із розділовими знаками
-    y = df['generated']
+    # Тепер до тренувальної частини додаємо магію (тільки AI)
+    magic_file = "daigt_magic_generations.csv"
+    if os.path.exists(magic_file):
+        print("🪄 Збагачуємо тренувальний набір різноманітними темами...")
+        df_magic = pd.read_csv(magic_file)
+        if 'label' in df_magic.columns:
+            df_magic = df_magic.rename(columns={'label': 'generated'})
+        
+        # Додаємо 500 різноманітних AI зразків
+        df_ai_extra = df_magic[df_magic['generated'] == 1].sample(n=min(500, len(df_magic)), random_state=42)
+        df_train = pd.concat([df_train_orig, df_ai_extra[['text', 'generated']]], ignore_index=True)
+        print(f"   Додано {len(df_ai_extra)} AI-зразків до навчання.")
+    else:
+        df_train = df_train_orig
 
-    X_train_raw, X_test_raw, y_train, y_test = train_test_split(X_raw, y, test_size=0.2, random_state=42)
-    X_train_orig, X_test_orig, _, _ = train_test_split(X_orig, y, test_size=0.2, random_state=42)
+    text_col = 'text' if 'text' in df_train.columns else df_train.columns[0]
+    
+    X_train_raw = df_train[text_col].apply(clean_text_basic)
+    X_train_orig = df_train[text_col]
+    y_train = df_train['generated']
 
-    print("📊 Рахуємо TF-IDF (обмежено до 500 слів)...")
-    _vectorizer = TfidfVectorizer(max_features=500, min_df=2, stop_words='english')
+    print("📊 Навчаємо TF-IDF (Generalized mode)...")
+    _vectorizer = TfidfVectorizer(
+        max_features=2500, 
+        min_df=3, 
+        max_df=0.7, 
+        ngram_range=(1, 2),
+        stop_words='english'
+    )
     X_train_tfidf = _vectorizer.fit_transform(X_train_raw)
     
     print("📈 Рахуємо лінгвістичні метрики...")
     X_train_ling = extract_linguistic_features(X_train_orig)
     
-    print("⚖️ Масштабуємо лінгвістичні метрики за допомогою StandardScaler...")
+    print("⚖️ Масштабуємо...")
     _scaler = StandardScaler()
     X_train_ling_scaled = _scaler.fit_transform(X_train_ling)
     
-    print("🔗 Зшиваємо ознаки разом (TF-IDF + Scaled Linguistics)...")
+    print("🔗 Зшиваємо ознаки...")
     X_train_combined = hstack([X_train_tfidf, csr_matrix(X_train_ling_scaled)])
     
-    print("🤖 Навчаємо фінальну модель (з регуляризацією C=0.5)...")
-    _model = LogisticRegression(random_state=42, max_iter=1000, C=0.5)
+    print("🤖 Навчаємо модель (LogisticRegression C=0.1)...")
+    _model = LogisticRegression(random_state=42, max_iter=2000, C=0.1, class_weight='balanced')
     _model.fit(X_train_combined, y_train)
-    print("✅ Model successfully trained with combined features!")
+    print("✅ Model successfully trained!")
 
 def run_full_model_test(dataset_path="dataset.csv"):
     """
-    Тестує модель на відкладених даних та виводить розгорнуту матрицю помилок у термінал.
+    Тестує модель на відкладених даних оригінального датасету.
     """
     global _model, _vectorizer, _scaler
     if _model is None or _vectorizer is None or _scaler is None:
         train_detector(dataset_path)
 
-    df = pd.read_csv(dataset_path, encoding='utf-8')
-    text_col = 'text' if 'text' in df.columns else df.columns[0]
-    df['cleaned_text'] = df[text_col].apply(clean_text_basic)
+    df_orig = pd.read_csv(dataset_path, encoding='utf-8')
+    _, df_test = train_test_split(df_orig, test_size=0.2, random_state=42, stratify=df_orig['generated'])
     
-    _, X_test_raw, _, y_test = train_test_split(
-        df['cleaned_text'], df['generated'], test_size=0.2, random_state=42
-    )
-    _, X_test_orig, _, _ = train_test_split(
-        df[text_col], df['generated'], test_size=0.2, random_state=42
-    )
+    text_col = 'text' if 'text' in df_test.columns else df_test.columns[0]
+    X_test_raw = df_test[text_col].apply(clean_text_basic)
+    X_test_orig = df_test[text_col]
+    y_test = df_test['generated']
     
     X_test_tfidf = _vectorizer.transform(X_test_raw)
     X_test_ling = extract_linguistic_features(X_test_orig)
@@ -110,7 +144,7 @@ def run_full_model_test(dataset_path="dataset.csv"):
     report = classification_report(y_test, predictions, target_names=['Human', 'AI'])
     
     print("\n" + "═"*60)
-    print("📊 SYSTEM MODEL EVALUATION REPORT (HYBRID MODE)")
+    print("📊 FINAL MODEL EVALUATION REPORT (VALIDATED ON CLEAN TEST SET)")
     print("═"*60)
     print(f"🎯 Overall Accuracy: {acc * 100:.2f}%")
     print("-" * 60)
@@ -126,29 +160,33 @@ def run_full_model_test(dataset_path="dataset.csv"):
     print(f"   -------------------------------------------------------------")
     print("═"*60 + "\n")
 
+
 def predict_ai_probability(raw_text):
     global _model, _vectorizer, _scaler
     if _model is None or _vectorizer is None or _scaler is None:
         train_detector()
 
     cleaned = clean_text_basic(raw_text)
-    
-    # 1. Слівна частина (TF-IDF)
     tfidf_feat = _vectorizer.transform([cleaned])
     
-    # 2. Лінгвістична частина (З нормалізацією масштабу)
-    avg_sent_len = calculate_avg_sentence_length(raw_text)
-    sent_len_var = calculate_sentence_length_variance(raw_text)
-    ttr = calculate_ttr(raw_text)
-    adj_density = calculate_adjective_density(raw_text)
+    features = [
+        calculate_avg_sentence_length(raw_text),
+        calculate_sentence_length_variance(raw_text),
+        calculate_avg_word_length(raw_text),
+        calculate_punctuation_density(raw_text),
+        calculate_sentence_start_diversity(raw_text),
+        calculate_comma_density(raw_text),
+        calculate_ttr(raw_text),
+        calculate_adjective_density(raw_text),
+        calculate_capital_ratio(raw_text),
+        calculate_stopword_density(raw_text)
+    ]
     
-    ling_feat = np.array([[avg_sent_len, sent_len_var, ttr, adj_density]])
+    ling_feat = np.array([features])
     ling_feat_scaled = _scaler.transform(ling_feat)
     
-    # 3. Зшивання докупи
     combined_feat = hstack([tfidf_feat, csr_matrix(ling_feat_scaled)])
     
-    # 4. Прогноз ймовірності ШІ
     probabilities = _model.predict_proba(combined_feat)[0]
     ai_prob = probabilities[1] * 100
     return round(ai_prob, 2)
