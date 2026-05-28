@@ -102,7 +102,7 @@ def calculate_sentence_start_diversity(text: str) -> float:
 
 def calculate_comma_density(text: str) -> float:
     """
-    Кількість ком на слово. Люди часто використовують складні речення з багатьма комами.
+    Кількість ком на слово.
     """
     tokens = word_tokenize(text)
     words = [w for w in tokens if w.isalpha()]
@@ -111,3 +111,39 @@ def calculate_comma_density(text: str) -> float:
     
     commas = text.count(',')
     return round(commas / len(words), 4)
+
+def calculate_dialogue_density(text: str) -> float:
+    """
+    Кількість лапок (діалогів). У ШІ есе їх майже немає.
+    """
+    quotes = text.count('"') + text.count("'")
+    words = len(text.split())
+    if words == 0: return 0.0
+    return round(quotes / words, 4)
+
+def calculate_sentence_end_diversity(text: str) -> float:
+    """
+    Чи використовує людина '?' та '!'. ШІ зазвичай тільки '.'.
+    """
+    if not text: return 0.0
+    ends = sum(1 for char in text if char in '!?')
+    sentences = len(sent_tokenize(text))
+    if sentences == 0: return 0.0
+    return round(ends / sentences, 4)
+
+
+def calculate_word_count(text: str) -> int:
+    """
+    Загальна кількість слів.
+    """
+    tokens = word_tokenize(text)
+    words = [w for w in tokens if w.isalpha()]
+    return len(words)
+
+def calculate_unique_word_count(text: str) -> int:
+    """
+    Кількість унікальних слів.
+    """
+    tokens = word_tokenize(text.lower())
+    words = [w for w in tokens if w.isalnum()]
+    return len(set(words))

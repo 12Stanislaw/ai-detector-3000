@@ -2,8 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import scrolledtext
 from src.classifier import run_full_model_test, train_detector, predict_ai_probability
-from src.metrics_advanced import calculate_ttr, calculate_adjective_density, calculate_stopword_density
-from src.metrics_basic import calculate_sentence_start_diversity
+from src.metrics_basic import calculate_sentence_length_variance, calculate_dialogue_density, calculate_sentence_end_diversity
 
 def analyze_text_action():
     """
@@ -20,10 +19,9 @@ def analyze_text_action():
     ai_percentage = predict_ai_probability(user_text)
     
     # Отримуємо розширені метрики
-    ttr_score = calculate_ttr(user_text)
-    adj_density = calculate_adjective_density(user_text)
-    stop_density = calculate_stopword_density(user_text)
-    sent_div = calculate_sentence_start_diversity(user_text)
+    var_score = calculate_sentence_length_variance(user_text)
+    dialogue = calculate_dialogue_density(user_text)
+    emotions = calculate_sentence_end_diversity(user_text)
 
     # Твоя логіка світлофора, яку ти написав!
     if 65 < ai_percentage <= 100: 
@@ -45,16 +43,16 @@ def analyze_text_action():
     # Динамічно виводимо твої метрики у текстове поле картки результатів
     metrics_label.config(
         text=(
-            f"📊 Text Style Metrics (Advanced Mode):\n"
-            f"• Lexical Richness (TTR): {ttr_score:.4f}\n"
-            f"• Adjective Density (POS): {adj_density * 100:.2f}%\n"
-            f"• Stopword Density: {stop_density:.4f}\n"
-            f"• Sentence Start Diversity: {sent_div:.2f}\n\n"
+            f"📊 Text Stability Metrics (Hybrid Mode):\n"
+            f"• Sentence Variance (Burstiness): {var_score:.2f}\n"
+            f"• Dialogue/Emotion Markers: {'High' if dialogue > 0.01 or emotions > 0.1 else 'Low'}\n\n"
             f"💡 Info:\n"
-            f"  - Lower TTR/Diversity usually indicates AI patterns.\n"
-            f"  - High Stopword Density (0.4+) is common for LLMs."
+            f"  - High Variance and Emotions are typical for humans.\n"
+            f"  - AI writes with very uniform 'robotic' patterns."
         )
     )
+
+
 
 #--- ДИЗАЙН ВІКНА ---
 root = tk.Tk()
