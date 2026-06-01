@@ -58,18 +58,15 @@ python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptr
 
 ## 💻 How to Run
 
-    Train and Launch GUI:
-    To automatically load the hybrid dataset, train the Logistic Regression classifier, and open the graphical application, simply run:
-    Bash
+To automatically load the hybrid dataset, train the Logistic Regression classifier, and open the graphical application, simply run:
+```bash
+python main.py
+```
+Input Text: Paste any English text into the interface window and hit "Analyze" to see the real-time AI probability breakdown
 
-    python gui.py
-
-    Input Text: Paste any English text into the interface window and hit "Analyze" to see the real-time AI probability breakdown.
-
-##📊 Authors & Contributors
+## 📊 Authors & Contributors
 
 Developed as an academic research project focused on NLP and machine learning text forensics.
 
-    Stanislav Prudyvus
-
-    Bohdan Malanchuk
+- Stanislav Prudyvus
+- Bohdan Malanchuk
