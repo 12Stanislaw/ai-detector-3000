@@ -57,7 +57,7 @@ def analyze_text_action():
 #--- ДИЗАЙН ВІКНА ---
 root = tk.Tk()
 root.title("AI-detector 3000")
-root.geometry("1920x1080")
+root.geometry("1200x1000")
 root.configure(bg="#1e1e2e") # Темно-синій/чорний фон (Сучасний вайб)
 
 # Налаштування стилів для стандартних елементів
@@ -89,7 +89,7 @@ text_input = scrolledtext.ScrolledText(
     root, 
     wrap=tk.WORD, 
     width=100, 
-    height=20, 
+    height=12, 
     font=("Arial", 14),
     bg="#313244", 
     fg="#cdd6f4", 
