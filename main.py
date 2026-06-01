@@ -57,40 +57,40 @@ def analyze_text_action():
 #--- ДИЗАЙН ВІКНА ---
 root = tk.Tk()
 root.title("AI-detector 3000")
-root.geometry("700x550")
+root.geometry("1920x1080")
 root.configure(bg="#1e1e2e") # Темно-синій/чорний фон (Сучасний вайб)
 
 # Налаштування стилів для стандартних елементів
 style = ttk.Style()
 style.theme_use('default')
-style.configure("TLabel", background="#1e1e2e", foreground="#cdd6f4", font=("Arial", 11))
-style.configure("TButton", background="#45475a", foreground="#ffffff", font=("Arial", 11, "bold"), borderwidth=0)
+style.configure("TLabel", background="#1e1e2e", foreground="#cdd6f4", font=("Arial", 16))
+style.configure("TButton", background="#45475a", foreground="#ffffff", font=("Arial", 16, "bold"), borderwidth=0)
 style.map("TButton", background=[("active", "#585b70")])
 
 # 1. Заголовок програми
 title_label = ttk.Label(
     root, 
     text="🔍 AI-detector 3000", 
-    font=("Arial", 18, "bold"), 
+    font=("Arial", 32, "bold"), 
     foreground="#cba6f7" # Фіолетовий акцент
 )
-title_label.pack(pady=15)
+title_label.pack(pady=40)
 
 # 2. Підзаголовок (Слоган)
 subtitle_label = ttk.Label(
     root, 
     text="Paste the text below to check if it has a human soul:",
-    font=("Arial", 10, "italic")
+    font=("Arial", 14, "italic")
 )
-subtitle_label.pack(pady=5)
+subtitle_label.pack(pady=10)
 
 # 3. Поле для вводу тексту (із прокруткою)
 text_input = scrolledtext.ScrolledText(
     root, 
     wrap=tk.WORD, 
-    width=75, 
-    height=12, 
-    font=("Arial", 11),
+    width=100, 
+    height=20, 
+    font=("Arial", 14),
     bg="#313244", 
     fg="#cdd6f4", 
     insertbackground="white", # Колір курсору
@@ -98,7 +98,7 @@ text_input = scrolledtext.ScrolledText(
     highlightthickness=1, 
     highlightbackground="#45475a"
 )
-text_input.pack(pady=15, padx=20)
+text_input.pack(pady=30, padx=50)
 
 # 4. Кнопка аналізу
 analyze_button = ttk.Button(
@@ -107,32 +107,32 @@ analyze_button = ttk.Button(
     command=analyze_text_action, # При натисканні викличеться функція вище
     cursor="hand2"
 )
-analyze_button.pack(pady=10, ipady=5, ipadx=10)
+analyze_button.pack(pady=20, ipady=15, ipadx=30)
 
 # 5. Рамка для виводу результатів (Картка)
 result_card = tk.Frame(root, bg="#313244", bd=0, highlightthickness=1, highlightbackground="#45475a")
-result_card.pack(fill=tk.BOTH, expand=True, padx=20, pady=15)
+result_card.pack(fill=tk.BOTH, expand=True, padx=50, pady=30)
 
 # Головний вердикт всередині картки
 result_label = ttk.Label(
     result_card, 
     text="Waiting for the text to be analyzed...", 
-    font=("Arial", 13, "bold"), 
+    font=("Arial", 22, "bold"), 
     background="#313244", 
     foreground="#a6adc8"
 )
-result_label.pack(pady=10, padx=10)
+result_label.pack(pady=20, padx=20)
 
 # Детальні метрики всередині картки
 metrics_label = ttk.Label(
     result_card, 
     text="The metrics will appear after scanning", 
-    font=("Arial", 10), 
+    font=("Arial", 16), 
     background="#313244", 
     foreground="#bac2de",
     justify=tk.LEFT
 )
-metrics_label.pack(pady=5, padx=10, anchor="w")
+metrics_label.pack(pady=15, padx=20, anchor="w")
 
 # Навчаємо модель безпосередньо перед запуском інтерфейсу
 try:
