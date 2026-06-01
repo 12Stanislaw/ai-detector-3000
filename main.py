@@ -12,7 +12,7 @@ def analyze_text_action():
     user_text = text_input.get("1.0", tk.END).strip()
     
     if not user_text:
-        result_label.config(text="❌ Будь ласка, введіть текст для аналізу!", foreground="#ff5555")
+        result_label.config(text="❌ Please, enter text for analysis!", foreground="#ff5555")
         return
     
     # Викликаємо нашу модель і отримуємо реальний відсоток ШІ
